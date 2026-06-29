@@ -1,0 +1,30 @@
+{
+  "appId": "com.ciberjohn.obsboard",
+  "productName": "OBS Board",
+  "copyright": "Copyright © 2024 ciberjohn",
+  "directories": {
+    "buildResources": "build",
+    "output": "dist"
+  },
+  "files": ["out/**/*"],
+  "mac": {
+    "target": [{ "target": "dmg", "arch": ["x64", "arm64"] }],
+    "category": "public.app-category.utilities",
+    "darkModeSupport": true
+  },
+  "win": {
+    "target": [{ "target": "nsis", "arch": ["x64"] }]
+  },
+  "linux": {
+    "target": [
+      { "target": "AppImage", "arch": ["x64"] },
+      { "target": "deb", "arch": ["x64"] }
+    ],
+    "category": "AudioVideo"
+  },
+  "nsis": {
+    "oneClick": false,
+    "allowToChangeInstallationDirectory": true,
+    "deleteAppDataOnUninstall": false
+  }
+}
