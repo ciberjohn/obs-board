@@ -42,7 +42,9 @@ async function createWindow() {
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: false,
+      // sandbox: true is safe here — preload only uses contextBridge + ipcRenderer,
+      // both of which are available in the sandboxed context.
+      sandbox: true,
       preload: join(__dirname, '../preload/index.js')
     }
   })
@@ -165,7 +167,14 @@ function registerWindowHandlers() {
 
   ipcMain.handle('app:get-platform', () => process.platform)
 
-  ipcMain.handle('app:open-url', (_, url) => shell.openExternal(url))
+  // Only http/https is permitted. file://, javascript:, and custom protocol
+  // handlers can trigger code execution or credential leakage (NTLM via smb://).
+  ipcMain.handle('app:open-url', (_, url) => {
+    if (typeof url !== 'string' || !/^https?:\/\//i.test(url)) {
+      return { success: false, error: 'Only http and https URLs are permitted' }
+    }
+    return shell.openExternal(url)
+  })
 }
 
 // ── App lifecycle ──────────────────────────────────────────────────────────────

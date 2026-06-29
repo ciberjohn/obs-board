@@ -3,6 +3,10 @@ import OBSWebSocket from 'obs-websocket-js'
 
 const obs = new OBSWebSocket()
 
+// RFC-1123 hostname + bare IPv4 + IPv6-in-brackets. Prevents URL injection
+// (e.g. host = "localhost:4455/evil") which would corrupt the ws:// URL.
+const VALID_HOST = /^(\[[\da-fA-F:]+\]|[\da-zA-Z0-9][\da-zA-Z0-9\-\.]{0,251}[\da-zA-Z0-9]|[\da-zA-Z0-9])$/
+
 /**
  * Returns the shared OBSWebSocket singleton so other modules (e.g. macros)
  * can call obs.call() without re-importing the connection state.
@@ -43,7 +47,24 @@ export function setupOBSHandlers(getWindow) {
 
   ipcMain.handle('obs:connect', async (_, { host, port, password }) => {
     try {
-      await obs.connect(`ws://${host}:${port}`, password)
+      // Validate host format to prevent WebSocket URL injection. A malicious
+      // imported config could set obs.host to "localhost:4455/evil" or an
+      // attacker-controlled server to steal the OBS password.
+      const safeHost = String(host ?? 'localhost').slice(0, 253)
+      if (!VALID_HOST.test(safeHost)) {
+        return { success: false, error: 'Invalid host format' }
+      }
+
+      const safePort = Math.trunc(Number(port ?? 4455))
+      if (!Number.isFinite(safePort) || safePort < 1 || safePort > 65535) {
+        return { success: false, error: 'Invalid port — must be 1–65535' }
+      }
+
+      if (typeof password !== 'string') {
+        return { success: false, error: 'Password must be a string' }
+      }
+
+      await obs.connect(`ws://${safeHost}:${safePort}`, password)
       return { success: true }
     } catch (e) {
       return { success: false, error: e.message }
@@ -68,7 +89,6 @@ export function setupOBSHandlers(getWindow) {
     }
   })
 
-  // Renderer passes sceneName as a plain string, not an object.
   ipcMain.handle('obs:set-scene', async (_, sceneName) => {
     try {
       await obs.call('SetCurrentProgramScene', { sceneName })
@@ -95,7 +115,6 @@ export function setupOBSHandlers(getWindow) {
     }
   })
 
-  // Renderer passes inputName as a plain string, not an object.
   ipcMain.handle('obs:toggle-mute', async (_, inputName) => {
     try {
       return await obs.call('ToggleInputMute', { inputName })

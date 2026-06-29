@@ -2,6 +2,7 @@
   "appId": "com.ciberjohn.obsboard",
   "productName": "OBS Board",
   "copyright": "Copyright © 2024 ciberjohn",
+  "asar": true,
   "directories": {
     "buildResources": "build",
     "output": "dist"
@@ -10,7 +11,12 @@
   "mac": {
     "target": [{ "target": "dmg", "arch": ["x64", "arm64"] }],
     "category": "public.app-category.utilities",
-    "darkModeSupport": true
+    "darkModeSupport": true,
+    // Hardened Runtime is required for notarisation and prevents unsigned code
+    // from being injected into the process (e.g. via dylib injection).
+    "hardenedRuntime": true,
+    "entitlements": "build/entitlements.mac.plist",
+    "entitlementsInherit": "build/entitlements.mac.plist"
   },
   "win": {
     "target": [{ "target": "nsis", "arch": ["x64"] }]

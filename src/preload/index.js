@@ -69,8 +69,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
     get: () => ipcRenderer.invoke('config:get'),
     set: (config) => ipcRenderer.invoke('config:set', config),
     exportConfig: () => ipcRenderer.invoke('config:export'),
+    // importConfig returns { success } | { requiresReview, commands, config } | { success: false, error }
     importConfig: () => ipcRenderer.invoke('config:import'),
     getDataPath: () => ipcRenderer.invoke('config:get-data-path'),
+    // Opens the userData folder via shell.openPath — avoids file:// URL construction
+    openDataFolder: () => ipcRenderer.invoke('config:open-data-folder'),
   },
 
   // ── Auto-updater ──────────────────────────────────────────────────────────

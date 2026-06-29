@@ -21,6 +21,11 @@ import LinkIcon from '@mui/icons-material/Link'
 import LinkOffIcon from '@mui/icons-material/LinkOff'
 import SystemUpdateAltIcon from '@mui/icons-material/SystemUpdateAlt'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
+import WarningAmberIcon from '@mui/icons-material/WarningAmber'
+import Dialog from '@mui/material/Dialog'
+import DialogTitle from '@mui/material/DialogTitle'
+import DialogContent from '@mui/material/DialogContent'
+import DialogActions from '@mui/material/DialogActions'
 import { useStore } from '../store'
 
 function TabPanel({ children, value, index }) {
@@ -50,6 +55,7 @@ export default function Settings() {
   const config = useStore((s) => s.config)
   const obsState = useStore((s) => s.obs)
   const updater = useStore((s) => s.updater)
+  const loadConfig = useStore((s) => s.loadConfig)
   const setUI = useStore((s) => s.setUI)
   const saveConfig = useStore((s) => s.saveConfig)
   const setOBSState = useStore((s) => s.setOBSState)
@@ -66,6 +72,9 @@ export default function Settings() {
   const [obsStatus, setObsStatus] = useState(null) // null | 'connecting' | 'success' | 'error'
   const [obsError, setObsError] = useState('')
   const [dataPath, setDataPath] = useState('')
+  const [importError, setImportError] = useState('')
+  const [importSuccess, setImportSuccess] = useState(false)
+  const [pendingImport, setPendingImport] = useState(null) // { commands, config }
 
   useEffect(() => {
     window.electronAPI.config.getDataPath().then(setDataPath).catch(() => {})
@@ -174,13 +183,37 @@ export default function Settings() {
   // ── Backup ─────────────────────────────────────────────────────────────────
 
   const handleExport = () => window.electronAPI.config.exportConfig()
-  const handleImport = () => window.electronAPI.config.importConfig()
 
+  const handleImport = async () => {
+    setImportError('')
+    setImportSuccess(false)
+    const result = await window.electronAPI.config.importConfig()
+    if (result.requiresReview) {
+      setPendingImport({ commands: result.commands, config: result.config })
+    } else if (result.success) {
+      await loadConfig()
+      setImportSuccess(true)
+    } else if (result.error && result.error !== 'Cancelled') {
+      setImportError(result.error)
+    }
+  }
+
+  const handleImportConfirm = async () => {
+    if (!pendingImport) return
+    await window.electronAPI.config.set(pendingImport.config)
+    await loadConfig()
+    setPendingImport(null)
+    setImportSuccess(true)
+  }
+
+  // Uses a dedicated IPC handle so we never construct a file:// URL in the
+  // renderer (which would be blocked by the app:open-url scheme whitelist).
   const handleOpenDataFolder = () => {
-    if (dataPath) window.electronAPI.app.openUrl(`file://${dataPath}`)
+    window.electronAPI.config.openDataFolder()
   }
 
   return (
+    <>
     <Box
       sx={{
         position: 'fixed',
@@ -536,6 +569,17 @@ export default function Settings() {
               Import config
             </Button>
 
+            {importSuccess && (
+              <Alert severity="success" sx={{ fontSize: 12, py: 0.5 }} onClose={() => setImportSuccess(false)}>
+                Config imported successfully
+              </Alert>
+            )}
+            {importError && (
+              <Alert severity="error" sx={{ fontSize: 12, py: 0.5 }} onClose={() => setImportError('')}>
+                {importError}
+              </Alert>
+            )}
+
             <Divider sx={{ my: 0.5 }} />
 
             <Box>
@@ -589,6 +633,16 @@ export default function Settings() {
         </TabPanel>
       </Box>
     </Box>
+
+    {/* Import command-review dialog — rendered outside the panel Box so it
+        can be a true full-screen overlay independent of the 320px panel. */}
+    <ImportReviewDialog
+      open={pendingImport !== null}
+      commands={pendingImport?.commands ?? []}
+      onConfirm={handleImportConfirm}
+      onCancel={() => setPendingImport(null)}
+    />
+    </>
   )
 }
 
@@ -795,4 +849,87 @@ function formatBytes(bytes) {
   if (bytes < 1024) return `${bytes} B`
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
+
+// ── Import command-review dialog ───────────────────────────────────────────────
+// Shown when an imported config contains 'command' type macro buttons.
+// The user must explicitly confirm before the config is written to disk.
+
+function ImportReviewDialog({ open, commands, onConfirm, onCancel }) {
+  return (
+    <Dialog open={open} maxWidth="sm" fullWidth onClose={onCancel}>
+      <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1.5, pb: 1 }}>
+        <WarningAmberIcon color="warning" />
+        Shell commands detected in import
+      </DialogTitle>
+
+      <DialogContent dividers>
+        <Alert severity="warning" sx={{ mb: 2, fontSize: 12 }}>
+          This config contains <strong>{commands.length}</strong> macro button{commands.length !== 1 ? 's' : ''} that
+          will execute shell commands on your machine. Review them carefully before importing.
+        </Alert>
+
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+          {commands.map((cmd, i) => (
+            <Box
+              key={i}
+              sx={{
+                border: '1px solid rgba(255,200,0,0.25)',
+                borderRadius: 1.5,
+                p: 1.5,
+                bgcolor: 'rgba(255,200,0,0.04)',
+              }}
+            >
+              <Typography variant="body2" fontWeight={600} sx={{ mb: 1 }}>
+                {cmd.label}
+              </Typography>
+              {[
+                { label: 'Windows', value: cmd.win },
+                { label: 'macOS', value: cmd.mac },
+                { label: 'Linux', value: cmd.linux },
+              ]
+                .filter((row) => row.value)
+                .map(({ label, value }) => (
+                  <Box key={label} sx={{ mb: 0.5 }}>
+                    <Typography variant="caption" color="text.secondary">
+                      {label}
+                    </Typography>
+                    <Box
+                      sx={{
+                        mt: 0.25,
+                        px: 1,
+                        py: 0.5,
+                        bgcolor: 'rgba(0,0,0,0.35)',
+                        borderRadius: 1,
+                        fontFamily: 'monospace',
+                        fontSize: 11,
+                        wordBreak: 'break-all',
+                        color: 'text.primary',
+                        whiteSpace: 'pre-wrap',
+                      }}
+                    >
+                      {value}
+                    </Box>
+                  </Box>
+                ))}
+            </Box>
+          ))}
+        </Box>
+
+        <Alert severity="info" sx={{ mt: 2, fontSize: 12 }}>
+          Only import configs from sources you trust. These commands will run with your
+          user account privileges when you click the button.
+        </Alert>
+      </DialogContent>
+
+      <DialogActions sx={{ px: 2, pb: 2, gap: 1 }}>
+        <Button onClick={onCancel} variant="outlined" color="inherit">
+          Cancel
+        </Button>
+        <Button onClick={onConfirm} variant="contained" color="warning" startIcon={<WarningAmberIcon />}>
+          I understand — import anyway
+        </Button>
+      </DialogActions>
+    </Dialog>
+  )
 }
