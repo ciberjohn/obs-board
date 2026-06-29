@@ -13,16 +13,21 @@ export default function App() {
   const configLoaded = useStore((s) => s.configLoaded)
   const config = useStore((s) => s.config)
   const setOBSState = useStore((s) => s.setOBSState)
+  const setUpdaterState = useStore((s) => s.setUpdaterState)
   const setUI = useStore((s) => s.setUI)
   const settingsOpen = useStore((s) => s.ui.settingsOpen)
   const editorOpen = useStore((s) => s.ui.editorOpen)
 
-  // Initial load: config + platform
+  // Initial load: config + platform + current app version
   useEffect(() => {
     const init = async () => {
       await loadConfig()
-      const platform = await window.electronAPI.app.getPlatform()
+      const [platform, currentVersion] = await Promise.all([
+        window.electronAPI.app.getPlatform(),
+        window.electronAPI.updater.getVersion(),
+      ])
       setUI({ platform })
+      setUpdaterState({ currentVersion })
     }
     init()
   }, [])
@@ -88,6 +93,31 @@ export default function App() {
       cleanupStream()
     }
   }, [configLoaded])
+
+  // Auto-updater event subscriptions
+  useEffect(() => {
+    const cleanups = [
+      window.electronAPI.updater.onChecking(() => {
+        setUpdaterState({ status: 'checking', error: null })
+      }),
+      window.electronAPI.updater.onAvailable((info) => {
+        setUpdaterState({ status: 'available', info })
+      }),
+      window.electronAPI.updater.onNotAvailable(() => {
+        setUpdaterState({ status: 'not-available' })
+      }),
+      window.electronAPI.updater.onProgress((progress) => {
+        setUpdaterState({ status: 'downloading', progress })
+      }),
+      window.electronAPI.updater.onDownloaded((info) => {
+        setUpdaterState({ status: 'downloaded', info, progress: null })
+      }),
+      window.electronAPI.updater.onError((msg) => {
+        setUpdaterState({ status: 'error', error: msg })
+      }),
+    ]
+    return () => cleanups.forEach((fn) => fn())
+  }, [])
 
   if (!configLoaded) {
     return (

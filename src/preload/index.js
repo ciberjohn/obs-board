@@ -1,5 +1,14 @@
 import { contextBridge, ipcRenderer } from 'electron'
 
+// Helper: register a one-way push listener and return a cleanup function.
+// Using a named reference (not an anonymous arrow) ensures removeListener
+// can correctly identify and remove the exact handler added.
+function onPush(channel, cb) {
+  const handler = (_, payload) => cb(payload)
+  ipcRenderer.on(channel, handler)
+  return () => ipcRenderer.removeListener(channel, handler)
+}
+
 contextBridge.exposeInMainWorld('electronAPI', {
 
   // ── Window controls ──────────────────────────────────────────────────────
@@ -34,23 +43,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     stopRecording: () => ipcRenderer.invoke('obs:stop-recording'),
     getStreamStatus: () => ipcRenderer.invoke('obs:get-stream-status'),
     getRecordStatus: () => ipcRenderer.invoke('obs:get-record-status'),
-
-    // Renderer-side event subscriptions — return cleanup functions
-    onConnectionChange: (cb) => {
-      const handler = (_, status) => cb(status)
-      ipcRenderer.on('obs:connection-change', handler)
-      return () => ipcRenderer.removeListener('obs:connection-change', handler)
-    },
-    onSceneChange: (cb) => {
-      const handler = (_, name) => cb(name)
-      ipcRenderer.on('obs:scene-change', handler)
-      return () => ipcRenderer.removeListener('obs:scene-change', handler)
-    },
-    onStreamStatusChange: (cb) => {
-      const handler = (_, status) => cb(status)
-      ipcRenderer.on('obs:stream-status-change', handler)
-      return () => ipcRenderer.removeListener('obs:stream-status-change', handler)
-    },
+    onConnectionChange: (cb) => onPush('obs:connection-change', cb),
+    onSceneChange: (cb) => onPush('obs:scene-change', cb),
+    onStreamStatusChange: (cb) => onPush('obs:stream-status-change', cb),
   },
 
   // ── Macro execution ───────────────────────────────────────────────────────
@@ -76,5 +71,19 @@ contextBridge.exposeInMainWorld('electronAPI', {
     exportConfig: () => ipcRenderer.invoke('config:export'),
     importConfig: () => ipcRenderer.invoke('config:import'),
     getDataPath: () => ipcRenderer.invoke('config:get-data-path'),
+  },
+
+  // ── Auto-updater ──────────────────────────────────────────────────────────
+  updater: {
+    getVersion: () => ipcRenderer.invoke('updater:get-version'),
+    check: () => ipcRenderer.invoke('updater:check'),
+    download: () => ipcRenderer.invoke('updater:download'),
+    install: () => ipcRenderer.invoke('updater:install'),
+    onChecking: (cb) => onPush('updater:checking', cb),
+    onAvailable: (cb) => onPush('updater:available', cb),
+    onNotAvailable: (cb) => onPush('updater:not-available', cb),
+    onProgress: (cb) => onPush('updater:progress', cb),
+    onDownloaded: (cb) => onPush('updater:downloaded', cb),
+    onError: (cb) => onPush('updater:error', cb),
   },
 })

@@ -26,5 +26,11 @@
     "oneClick": false,
     "allowToChangeInstallationDirectory": true,
     "deleteAppDataOnUninstall": false
+  },
+  "publish": {
+    "provider": "github",
+    "owner": "ciberjohn",
+    "repo": "obs-board",
+    "releaseType": "release"
   }
 }

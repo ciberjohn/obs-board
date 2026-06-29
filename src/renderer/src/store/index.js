@@ -1,8 +1,10 @@
 import { create } from 'zustand'
 
+// Guarded deep merge: ignores keys that would pollute the prototype chain.
 function deepMerge(target, source) {
   const result = { ...target }
   for (const key of Object.keys(source)) {
+    if (key === '__proto__' || key === 'constructor' || key === 'prototype') continue
     const srcVal = source[key]
     const tgtVal = target[key]
     if (
@@ -34,6 +36,17 @@ export const useStore = create((set, get) => ({
     inputs: [],
     streaming: false,
     recording: false,
+  },
+
+  // ── Auto-updater state ─────────────────────────────────────────────────────
+  updater: {
+    // status: 'idle' | 'checking' | 'available' | 'not-available' |
+    //         'downloading' | 'downloaded' | 'error'
+    status: 'idle',
+    info: null,      // { version, releaseDate, releaseNotes } when available
+    progress: null,  // { percent, bytesPerSecond, transferred, total }
+    error: null,
+    currentVersion: null,
   },
 
   // ── UI state ───────────────────────────────────────────────────────────────
@@ -71,6 +84,10 @@ export const useStore = create((set, get) => ({
 
   setOBSState: (partial) => {
     set((state) => ({ obs: { ...state.obs, ...partial } }))
+  },
+
+  setUpdaterState: (partial) => {
+    set((state) => ({ updater: { ...state.updater, ...partial } }))
   },
 
   setUI: (partial) => {

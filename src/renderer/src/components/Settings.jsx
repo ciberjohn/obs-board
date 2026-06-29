@@ -11,12 +11,16 @@ import Slider from '@mui/material/Slider'
 import IconButton from '@mui/material/IconButton'
 import Alert from '@mui/material/Alert'
 import Divider from '@mui/material/Divider'
+import LinearProgress from '@mui/material/LinearProgress'
+import Chip from '@mui/material/Chip'
 import CloseIcon from '@mui/icons-material/Close'
 import FolderOpenIcon from '@mui/icons-material/FolderOpen'
 import FileUploadIcon from '@mui/icons-material/FileUpload'
 import FileDownloadIcon from '@mui/icons-material/FileDownload'
 import LinkIcon from '@mui/icons-material/Link'
 import LinkOffIcon from '@mui/icons-material/LinkOff'
+import SystemUpdateAltIcon from '@mui/icons-material/SystemUpdateAlt'
+import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import { useStore } from '../store'
 
 function TabPanel({ children, value, index }) {
@@ -45,6 +49,7 @@ function SectionLabel({ children }) {
 export default function Settings() {
   const config = useStore((s) => s.config)
   const obsState = useStore((s) => s.obs)
+  const updater = useStore((s) => s.updater)
   const setUI = useStore((s) => s.setUI)
   const saveConfig = useStore((s) => s.saveConfig)
   const setOBSState = useStore((s) => s.setOBSState)
@@ -230,6 +235,23 @@ export default function Settings() {
           <Tab label="Grid" />
           <Tab label="Window" />
           <Tab label="Backup" />
+          <Tab
+            label="Updates"
+            iconPosition="end"
+            icon={
+              (updater.status === 'available' || updater.status === 'downloaded') ? (
+                <Box
+                  sx={{
+                    width: 7,
+                    height: 7,
+                    borderRadius: '50%',
+                    bgcolor: updater.status === 'downloaded' ? 'success.main' : 'warning.main',
+                    flexShrink: 0,
+                  }}
+                />
+              ) : null
+            }
+          />
         </Tabs>
       </Box>
 
@@ -495,6 +517,7 @@ export default function Settings() {
 
         {/* ── Tab 4: Backup ── */}
         <TabPanel value={tab} index={4}>
+
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
             <Button
               variant="outlined"
@@ -559,7 +582,217 @@ export default function Settings() {
             </Box>
           </Box>
         </TabPanel>
+
+        {/* ── Tab 5: Updates ── */}
+        <TabPanel value={tab} index={5}>
+          <UpdatesTab updater={updater} />
+        </TabPanel>
       </Box>
     </Box>
   )
+}
+
+// ── Updates tab (isolated component to keep Settings readable) ──────────────
+
+function UpdatesTab({ updater }) {
+  const [checking, setChecking] = useState(false)
+  const [downloading, setDownloading] = useState(false)
+
+  const handleCheck = async () => {
+    setChecking(true)
+    try {
+      await window.electronAPI.updater.check()
+    } finally {
+      setChecking(false)
+    }
+  }
+
+  const handleDownload = async () => {
+    setDownloading(true)
+    try {
+      await window.electronAPI.updater.download()
+    } catch {
+      setDownloading(false)
+    }
+  }
+
+  const handleInstall = () => {
+    window.electronAPI.updater.install()
+  }
+
+  const statusLabel = {
+    idle: null,
+    checking: 'Checking for updates…',
+    'not-available': 'You are on the latest version.',
+    available: null,
+    downloading: null,
+    downloaded: null,
+    error: null,
+  }[updater.status]
+
+  return (
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+
+      {/* Current version */}
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          bgcolor: 'rgba(255,255,255,0.04)',
+          borderRadius: 1,
+          px: 1.5,
+          py: 1.25,
+        }}
+      >
+        <Box>
+          <Typography variant="caption" color="text.secondary" display="block">
+            Current version
+          </Typography>
+          <Typography variant="body2" sx={{ fontFamily: 'monospace', mt: 0.25 }}>
+            v{updater.currentVersion ?? '—'}
+          </Typography>
+        </Box>
+        {updater.status === 'not-available' && (
+          <Chip
+            size="small"
+            icon={<CheckCircleIcon sx={{ fontSize: 14 }} />}
+            label="Up to date"
+            color="success"
+            variant="outlined"
+            sx={{ fontSize: 11 }}
+          />
+        )}
+      </Box>
+
+      {/* Status messages */}
+      {statusLabel && (
+        <Alert severity="info" sx={{ fontSize: 12, py: 0.5 }}>
+          {statusLabel}
+        </Alert>
+      )}
+
+      {updater.status === 'error' && (
+        <Alert severity="error" sx={{ fontSize: 12, py: 0.5 }}>
+          {updater.error ?? 'Update check failed'}
+        </Alert>
+      )}
+
+      {/* New version available */}
+      {(updater.status === 'available' || updater.status === 'downloading' || updater.status === 'downloaded') && updater.info && (
+        <Box
+          sx={{
+            border: '1px solid',
+            borderColor: updater.status === 'downloaded' ? 'success.main' : 'primary.main',
+            borderRadius: 1.5,
+            p: 1.5,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 1,
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <SystemUpdateAltIcon
+              sx={{
+                fontSize: 18,
+                color: updater.status === 'downloaded' ? 'success.main' : 'primary.main',
+              }}
+            />
+            <Box>
+              <Typography variant="body2" fontWeight={600}>
+                v{updater.info.version} available
+              </Typography>
+              {updater.info.releaseDate && (
+                <Typography variant="caption" color="text.secondary">
+                  Released {new Date(updater.info.releaseDate).toLocaleDateString()}
+                </Typography>
+              )}
+            </Box>
+          </Box>
+
+          {updater.info.releaseNotes && (
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{
+                display: 'block',
+                maxHeight: 80,
+                overflowY: 'auto',
+                bgcolor: 'rgba(0,0,0,0.2)',
+                borderRadius: 1,
+                p: 1,
+                whiteSpace: 'pre-wrap',
+                wordBreak: 'break-word',
+                scrollbarWidth: 'thin',
+              }}
+            >
+              {updater.info.releaseNotes}
+            </Typography>
+          )}
+        </Box>
+      )}
+
+      {/* Download progress */}
+      {updater.status === 'downloading' && updater.progress && (
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+            <Typography variant="caption" color="text.secondary">
+              Downloading…
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              {updater.progress.percent}%
+            </Typography>
+          </Box>
+          <LinearProgress
+            variant="determinate"
+            value={updater.progress.percent ?? 0}
+            sx={{ borderRadius: 4, height: 6 }}
+          />
+          <Typography variant="caption" color="text.secondary">
+            {formatBytes(updater.progress.transferred)} / {formatBytes(updater.progress.total)}
+          </Typography>
+        </Box>
+      )}
+
+      {/* Action buttons */}
+      {updater.status === 'downloaded' ? (
+        <Button
+          variant="contained"
+          color="success"
+          fullWidth
+          startIcon={<SystemUpdateAltIcon />}
+          onClick={handleInstall}
+        >
+          Restart &amp; Install v{updater.info?.version}
+        </Button>
+      ) : updater.status === 'available' ? (
+        <Button
+          variant="contained"
+          fullWidth
+          startIcon={<SystemUpdateAltIcon />}
+          onClick={handleDownload}
+          disabled={downloading}
+        >
+          {downloading ? 'Starting download…' : 'Download update'}
+        </Button>
+      ) : (
+        <Button
+          variant="outlined"
+          fullWidth
+          onClick={handleCheck}
+          disabled={checking || updater.status === 'checking' || updater.status === 'downloading'}
+        >
+          {checking || updater.status === 'checking' ? 'Checking…' : 'Check for updates'}
+        </Button>
+      )}
+
+    </Box>
+  )
+}
+
+function formatBytes(bytes) {
+  if (!bytes) return '0 B'
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }

@@ -4,6 +4,7 @@ import { is } from '@electron-toolkit/utils'
 import { setupOBSHandlers } from './handlers/obs.js'
 import { setupMacroHandlers } from './handlers/macros.js'
 import { setupConfigHandlers, loadWindowState, saveWindowState } from './handlers/config.js'
+import { setupUpdater } from './handlers/updater.js'
 
 let mainWindow = null
 let tray = null
@@ -184,6 +185,7 @@ app.whenReady().then(async () => {
   // setupOBSHandlers can capture the getWindow closure.
   setupOBSHandlers(() => mainWindow)
   setupMacroHandlers()
+  setupUpdater(() => mainWindow)
 
   // macOS: re-create the window when the dock icon is clicked and no windows
   // are open.
