@@ -101,4 +101,4 @@ to check the current state. If you discover a vulnerability in a dependency that
 
 ## Responsible disclosure
 
-We follow a **90-day disclosure timeline**: if a reported vulnerability has not been patched within 90 days, the reporter is free to publish their findings. We will acknowledge public credit to reporters unless they prefer to remain anonymous.
+I follow a **90-day disclosure timeline**: if a reported vulnerability has not been patched within 90 days, the reporter is free to publish their findings. I will acknowledge public credit to reporters unless they prefer to remain anonymous.

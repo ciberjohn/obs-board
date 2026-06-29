@@ -263,6 +263,14 @@ Code style: ES modules, functional React components, no TypeScript (for now), Br
 
 ---
 
+## Built with Claude
+
+OBS Board was designed and built in collaboration with [Claude](https://claude.ai) by Anthropic — used as an AI pair-programmer throughout the entire project, from architecture decisions and security hardening to the React UI and installer scripts.
+
+If you're curious about the process, the full conversation that produced this codebase is the kind of session Claude Code was built for: iterative, security-conscious, and treating the AI as a senior collaborator rather than a code generator.
+
+---
+
 <div align="center">
 Made for streamers, by a streamer. No hardware required.
 </div>
