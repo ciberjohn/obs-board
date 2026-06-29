@@ -87,7 +87,7 @@ Set `GH_TOKEN` to a GitHub personal access token with the `repo` scope, then tag
 ```bash
 git tag v1.0.1
 git push origin v1.0.1
-GH_TOKEN=ghp_... npm run package:linux   # repeat per platform
+GH_TOKEN=<your-token> npm run package:linux   # repeat per platform
 ```
 
 electron-builder publishes the artefacts to the GitHub release automatically. The app's built-in updater will detect the new version within 30 seconds of the next user launch.

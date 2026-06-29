@@ -3,3 +3,9 @@ out/
 dist/
 .DS_Store
 *.local
+.env
+.env.*
+*.pem
+*.p12
+*.key
+*.pfx

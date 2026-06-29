@@ -1,7 +1,7 @@
 {
   "appId": "com.ciberjohn.obsboard",
   "productName": "OBS Board",
-  "copyright": "Copyright © 2024 ciberjohn",
+  "copyright": "Copyright © 2026 ciberjohn",
   "asar": true,
   "directories": {
     "buildResources": "build",
