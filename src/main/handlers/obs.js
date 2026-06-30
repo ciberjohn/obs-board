@@ -1,7 +1,17 @@
 import { ipcMain } from 'electron'
-import OBSWebSocket from 'obs-websocket-js'
 
-const obs = new OBSWebSocket()
+// obs-websocket-js v5 is ESM-only. A static import gets compiled to a CJS
+// require() by electron-vite, which returns the module namespace object rather
+// than the constructor. Dynamic import preserves the ESM semantics.
+let obs = null
+
+async function initOBS() {
+  if (!obs) {
+    const { default: OBSWebSocket } = await import('obs-websocket-js')
+    obs = new OBSWebSocket()
+  }
+  return obs
+}
 
 // RFC-1123 hostname + bare IPv4 + IPv6-in-brackets. Prevents URL injection
 // (e.g. host = "localhost:4455/evil") which would corrupt the ws:// URL.
@@ -10,6 +20,7 @@ const VALID_HOST = /^(\[[\da-fA-F:]+\]|[\da-zA-Z0-9][\da-zA-Z0-9\-\.]{0,251}[\da
 /**
  * Returns the shared OBSWebSocket singleton so other modules (e.g. macros)
  * can call obs.call() without re-importing the connection state.
+ * Only valid after setupOBSHandlers() has been awaited.
  */
 export function getOBS() {
   return obs
@@ -21,7 +32,8 @@ export function getOBS() {
  *
  * @param {() => Electron.BrowserWindow | null} getWindow
  */
-export function setupOBSHandlers(getWindow) {
+export async function setupOBSHandlers(getWindow) {
+  obs = await initOBS()
   // ── Push events → renderer ─────────────────────────────────────────────────
 
   obs.on('CurrentProgramSceneChanged', (data) => {

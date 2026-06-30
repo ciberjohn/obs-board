@@ -192,7 +192,7 @@ app.whenReady().then(async () => {
 
   // OBS and macro handlers are registered after the window exists so that
   // setupOBSHandlers can capture the getWindow closure.
-  setupOBSHandlers(() => mainWindow)
+  await setupOBSHandlers(() => mainWindow)
   setupMacroHandlers()
   setupUpdater(() => mainWindow)
 
