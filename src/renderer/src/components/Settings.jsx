@@ -296,6 +296,17 @@ export default function Settings() {
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.75 }}>
             <SectionLabel>OBS WebSocket</SectionLabel>
 
+            {!obsState.connected && !obsFields.password && (
+              <Alert severity="info" sx={{ fontSize: 12, py: 0.75 }}>
+                <strong>Setup required</strong>
+                <br />
+                In OBS Studio (28+), go to{' '}
+                <strong>Tools → WebSocket Server Settings</strong>, tick{' '}
+                <strong>Enable WebSocket server</strong>, set a password, then
+                enter your host, port, and password below.
+              </Alert>
+            )}
+
             <TextField
               size="small"
               fullWidth

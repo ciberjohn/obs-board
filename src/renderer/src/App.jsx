@@ -28,6 +28,14 @@ export default function App() {
       ])
       setUI({ platform })
       setUpdaterState({ currentVersion })
+
+      // On first launch, open Settings → OBS tab so the user knows to configure
+      // the WebSocket connection before anything else.
+      const freshConfig = useStore.getState().config
+      if (freshConfig?.firstRun !== false) {
+        setUI({ settingsOpen: true, settingsTab: 0 })
+        await window.electronAPI.config.set({ firstRun: false })
+      }
     }
     init()
   }, [])

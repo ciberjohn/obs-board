@@ -3,6 +3,7 @@ import { readFileSync, writeFileSync } from 'fs'
 
 const DEFAULT_CONFIG = {
   version: '1.0.0',
+  firstRun: true,
   obs: {
     host: 'localhost',
     port: 4455,
@@ -37,7 +38,7 @@ const DEFAULT_CONFIG = {
 // Only these top-level keys are accepted in config:set and config:import.
 // Unknown keys written by a renderer-compromise or malicious import are silently dropped.
 const ALLOWED_CONFIG_KEYS = new Set([
-  'version', 'obs', 'window', 'appearance', 'pages', 'activePage'
+  'version', 'firstRun', 'obs', 'window', 'appearance', 'pages', 'activePage'
 ])
 
 const VALID_ACTION_TYPES = new Set([
