@@ -60,44 +60,39 @@ Most streaming control tools are either subscription-locked, Windows-only, or re
 
 ## Installation
 
-> **Status:** No packaged release has been published yet. The one-liner installers and release downloads below require a published GitHub Release to work. Until then, install from source — it takes about two minutes.
-
-### Install from source (available now)
-
-Works on Windows, macOS, and Linux.
-
-**Prerequisites:** [Node.js 20 LTS or 22 LTS](https://nodejs.org) (use [nvm](https://github.com/nvm-sh/nvm) to manage versions).
-
-```bash
-git clone https://github.com/ciberjohn/obs-board.git
-cd obs-board
-npm install
-npm start          # or: npm run dev
-```
-
-The app launches immediately. No build step required to run it.
-
----
-
-### Pre-built installers *(requires a published release)*
-
-Once the first release is tagged and published to GitHub, the following one-liners will work.
-
-**Linux / macOS:**
+### Linux
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/ciberjohn/obs-board/master/scripts/install.sh | bash
 ```
 
-Auto-detects your distro — installs `.deb` on Debian/Ubuntu/Mint, AppImage on everything else, and the correct `.dmg` architecture on macOS.
+Auto-detects your distro — installs the `.deb` package on Debian/Ubuntu/Mint, AppImage on everything else.
 
-**Windows** *(PowerShell, run as Administrator):*
+**Manual download:** [Releases page](https://github.com/ciberjohn/obs-board/releases/latest)
+
+---
+
+### macOS
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/ciberjohn/obs-board/master/scripts/install.sh | bash
+```
+
+Detects Apple Silicon or Intel and installs the correct build to `/Applications`.
+
+**Manual download:** [Releases page](https://github.com/ciberjohn/obs-board/releases/latest)
+
+---
+
+### Windows
+
+**PowerShell (run as Administrator):**
 
 ```powershell
 irm https://raw.githubusercontent.com/ciberjohn/obs-board/master/scripts/install.ps1 | iex
 ```
 
-Or download the installer directly from the [Releases page](https://github.com/ciberjohn/obs-board/releases).
+Or download `obs-board-Setup-x.x.x.exe` from the [Releases page](https://github.com/ciberjohn/obs-board/releases/latest) and run it directly.
 
 > **Note:** Windows may show a SmartScreen warning because the binary is not yet code-signed. Click **More info → Run anyway**. See [SECURITY.md](SECURITY.md) for details.
 
