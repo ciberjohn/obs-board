@@ -12,8 +12,7 @@ Run shell commands · Switch OBS scenes · Open programs and folders · All from
 [![OBS WebSocket](https://img.shields.io/badge/OBS%20WebSocket-v5-FF6B35.svg)](https://obsproject.com)
 
 <!--
-  TODO: Add a screenshot here once the app is packaged.
-  Suggested size: 800×500px, dark background.
+  TODO: Add a screenshot here (800×500px, dark background).
   Path: docs/assets/screenshot.png
 -->
 
@@ -55,48 +54,52 @@ Most streaming control tools are either subscription-locked, Windows-only, or re
 
 - **OBS Studio 28 or later** — the built-in WebSocket server must be enabled (see [OBS Setup](#obs-setup))
 - **Windows 10+ / macOS 12+ / Ubuntu 20.04+** (other Linux distros supported via AppImage)
-- No other dependencies — the installer bundles everything
+- **Node.js 20 LTS or 22 LTS** — only required when installing from source
 
 ---
 
 ## Installation
 
-### Linux
+> **Status:** No packaged release has been published yet. The one-liner installers and release downloads below require a published GitHub Release to work. Until then, install from source — it takes about two minutes.
+
+### Install from source (available now)
+
+Works on Windows, macOS, and Linux.
+
+**Prerequisites:** [Node.js 20 LTS or 22 LTS](https://nodejs.org) (use [nvm](https://github.com/nvm-sh/nvm) to manage versions).
+
+```bash
+git clone https://github.com/ciberjohn/obs-board.git
+cd obs-board
+npm install
+npm start          # or: npm run dev
+```
+
+The app launches immediately. No build step required to run it.
+
+---
+
+### Pre-built installers *(requires a published release)*
+
+Once the first release is tagged and published to GitHub, the following one-liners will work.
+
+**Linux / macOS:**
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/ciberjohn/obs-board/master/scripts/install.sh | bash
 ```
 
-This script auto-detects your distribution. It installs the `.deb` package on Debian/Ubuntu/Mint and the AppImage on everything else.
+Auto-detects your distro — installs `.deb` on Debian/Ubuntu/Mint, AppImage on everything else, and the correct `.dmg` architecture on macOS.
 
-**Manual download:** grab the latest release from the [Releases page](https://github.com/ciberjohn/obs-board/releases/latest).
-
----
-
-### macOS
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/ciberjohn/obs-board/master/scripts/install.sh | bash
-```
-
-The script detects Apple Silicon or Intel and downloads the matching `.dmg`, mounts it, and copies OBS Board to `/Applications`.
-
-**Manual download:** `.dmg` files for both architectures are on the [Releases page](https://github.com/ciberjohn/obs-board/releases/latest).
-
----
-
-### Windows
-
-**PowerShell (run as Administrator):**
+**Windows** *(PowerShell, run as Administrator):*
 
 ```powershell
 irm https://raw.githubusercontent.com/ciberjohn/obs-board/master/scripts/install.ps1 | iex
 ```
 
-Or download `obs-board-Setup-x.x.x.exe` from the [Releases page](https://github.com/ciberjohn/obs-board/releases/latest) and run it directly.
+Or download the installer directly from the [Releases page](https://github.com/ciberjohn/obs-board/releases).
 
-> **Note:** Windows may show a SmartScreen warning because the binary is not yet code-signed.  
-> Click **More info → Run anyway** to proceed. See [SECURITY.md](SECURITY.md) for details.
+> **Note:** Windows may show a SmartScreen warning because the binary is not yet code-signed. Click **More info → Run anyway**. See [SECURITY.md](SECURITY.md) for details.
 
 ---
 
@@ -188,16 +191,7 @@ Open the folder directly from **Settings → Backup → Open data folder**.
 
 ## Building from Source
 
-See [docs/BUILDING.md](docs/BUILDING.md) for full instructions.
-
-**Quick start:**
-
-```bash
-git clone https://github.com/ciberjohn/obs-board.git
-cd obs-board
-npm install
-npm run dev        # launch in development mode (hot reload)
-```
+See [docs/BUILDING.md](docs/BUILDING.md) for full instructions, including how to package platform installers and publish a release.
 
 ---
 
