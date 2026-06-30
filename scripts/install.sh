@@ -77,15 +77,9 @@ VERSION=$(echo "$RELEASE_JSON" | grep '"tag_name"' | head -1 | sed 's/.*"tag_nam
 
 info "Latest version: ${BOLD}${VERSION}${RESET}"
 
-# ── OS detection ───────────────────────────────────────────────────────────────
+# ── OS / arch detection (used by installer functions below) ───────────────────
 OS="$(uname -s)"
 ARCH="$(uname -m)"
-
-case "$OS" in
-  Linux)  install_linux  ;;
-  Darwin) install_macos  ;;
-  *)      die "Unsupported OS: $OS. Download manually from https://github.com/${REPO}/releases/latest" ;;
-esac
 
 # ── Helper: download an asset by name pattern ──────────────────────────────────
 download_asset() {
