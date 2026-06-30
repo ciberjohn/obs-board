@@ -3,7 +3,10 @@
   "version": "1.0.0",
   "description": "A floating macro pad for OBS streaming control",
   "main": "out/main/index.js",
-  "author": "ciberjohn",
+  "author": {
+    "name": "ciberjohn",
+    "email": "ciberjohn@gmail.com"
+  },
   "license": "MIT",
   "scripts": {
     "dev": "electron-vite dev",
