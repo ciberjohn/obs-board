@@ -46,9 +46,34 @@ api_get() {
 
 # ── Get latest release info ────────────────────────────────────────────────────
 info "Fetching latest release information…"
-RELEASE_JSON=$(api_get "$API") || die "Could not reach GitHub API. If the repo is private, set GITHUB_TOKEN."
+
+# Capture HTTP status separately so we can give a precise error
+HTTP_STATUS=$(curl -o /tmp/obs_release.json -w "%{http_code}" -sSL \
+  -H "Accept: application/vnd.github+json" \
+  ${GITHUB_TOKEN:+-H "Authorization: Bearer ${GITHUB_TOKEN}"} \
+  "$API")
+
+if [ "$HTTP_STATUS" = "404" ]; then
+  die "$(cat <<MSG
+No releases have been published yet.
+
+Install from source instead:
+  git clone https://github.com/${REPO}.git
+  cd obs-board
+  npm install
+  npm start
+
+See https://github.com/${REPO}/wiki/Installation for full instructions.
+MSG
+)"
+elif [ "$HTTP_STATUS" != "200" ]; then
+  die "GitHub API returned HTTP ${HTTP_STATUS}. Check your internet connection and try again."
+fi
+
+RELEASE_JSON=$(cat /tmp/obs_release.json)
+rm -f /tmp/obs_release.json
 VERSION=$(echo "$RELEASE_JSON" | grep '"tag_name"' | head -1 | sed 's/.*"tag_name": *"\([^"]*\)".*/\1/')
-[ -n "$VERSION" ] || die "Could not determine the latest version. No releases published yet?"
+[ -n "$VERSION" ] || die "Could not parse version from GitHub API response."
 
 info "Latest version: ${BOLD}${VERSION}${RESET}"
 

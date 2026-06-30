@@ -39,12 +39,26 @@ if ($env:GITHUB_TOKEN) {
 try {
     $release = Invoke-RestMethod -Uri $ApiUrl -Headers $headers -UseBasicParsing
 } catch {
-    Write-Fail "Could not reach the GitHub API. If the repo is private, set `$env:GITHUB_TOKEN before running."
+    $statusCode = $_.Exception.Response.StatusCode.value__
+    if ($statusCode -eq 404) {
+        Write-Fail @"
+No releases have been published yet.
+
+Install from source instead:
+  git clone https://github.com/$Repo.git
+  cd obs-board
+  npm install
+  npm start
+
+See https://github.com/$Repo/wiki/Installation for full instructions.
+"@
+    }
+    Write-Fail "Could not reach the GitHub API (HTTP $statusCode). Check your internet connection and try again."
 }
 
 $version = $release.tag_name
 if (-not $version) {
-    Write-Fail "Could not determine the latest version. Has a release been published yet?"
+    Write-Fail "Could not determine the latest version from the API response."
 }
 
 Write-Info "Latest version: $version"
