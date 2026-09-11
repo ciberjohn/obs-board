@@ -9,3 +9,7 @@ dist/
 *.p12
 *.key
 *.pfx
+
+# Windows
+Desktop.ini
+Thumbs.db
