@@ -16,6 +16,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
       - name: Create GitHub Release
         run: |
           gh release create "${{ github.ref_name }}" \
@@ -58,4 +61,3 @@ jobs:
         run: npx electron-vite build && npx electron-builder --${{ matrix.platform }} --publish always
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NODE_OPTIONS: --unhandled-rejections=strict
